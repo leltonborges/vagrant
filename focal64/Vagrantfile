@@ -1,3 +1,9 @@
+$script_mysql = <<-SCRIPT
+  apt-get update && \
+  apt-get install -y mysql-server=8.0.27-0ubuntu0.20.04.1 && \
+  mysql -e "create user 'user'@'localhost' identified by 'pass';"
+SCRIPT
+
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/focal64"
   config.vm.network "forwarded_port", guest: 80, host: 8089
@@ -5,4 +11,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.synced_folder "./config", "/config"
   config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  config.vm.provision "shell", inline: $script_mysql
 end
