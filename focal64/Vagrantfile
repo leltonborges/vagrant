@@ -1,16 +1,37 @@
 $script_mysql = <<-SCRIPT
   apt-get update && \
-  apt-get install -y mysql-server=8.0.27-0ubuntu0.20.04.1 && \
+  apt-get install -y mysql-server=8.0.27-0ubuntu0.20.04.1 net-tools && \
   mysql -e "create user 'user'@'localhost' identified by 'pass';"
+SCRIPT
+
+
+$script_puppet = <<-SCRIPT
+  apt-get update && \
+  apt-get install -y puppet net-tools
 SCRIPT
 
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/focal64"
-  config.vm.network "forwarded_port", guest: 80, host: 8089
-  config.vm.network "public_network", ip: "192.168.1.24"
 
-  config.vm.synced_folder "./config", "/config"
-  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.define "mysqldb" do |mysql|
+    mysql.vm.network "public_network", ip: "192.168.1.24", bridge: "enp3s0"
+    
+    mysql.vm.synced_folder "./config", "/config"
+    mysql.vm.synced_folder ".", "/vagrant", disabled: true
+  
+    mysql.vm.provision "shell", inline: $script_mysql
+  end
+  
+  config.vm.define "phpweb" do |php|
+    php.vm.network "forwarded_port", guest: 8888, host: 8888
+    php.vm.network "public_network", ip: "192.168.1.25", bridge: "enp3s0"
+    
+    php.vm.provision "shell", inline: $script_puppet
 
-  config.vm.provision "shell", inline: $script_mysql
+    php.vm.provision "puppet" do |puppet|
+      puppet.manifests_path = ["vm", "/vagrant/config/manifests/"]
+      puppet.manifest_file = "phpweb.pp"
+    end
+  end
+  
 end
