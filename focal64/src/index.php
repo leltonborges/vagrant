@@ -8,7 +8,7 @@
 </head>
 <body>
     <?php 
-        echo '<h1>Funcionou</h1>';
+        echo '<h1>Funcionou?? Mesmo</h1>';
     ?>
 </body>
 </html>
